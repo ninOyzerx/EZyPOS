@@ -1,0 +1,172 @@
+@keyframes typingEffect {
+    0% { content: ""; }
+    15% { content: "E"; }
+    30% { content: "EZ"; }
+    45% { content: "EZy"; }
+    60% { content: "EZyP"; }
+    75% { content: "EZyPO"; }
+    90% { content: "EZyPOS"; }
+    100% { content: "EZyPOS"; }
+  }
+  
+  .typewriter-animation::before {
+    content: "E";
+    animation: typingEffect 3s steps(6) forwards;
+    border-right: 2px solid;
+    padding-right: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    display: inline-block;
+    font-size: xxx-large;
+  }
+  
+  @keyframes blink {
+    50% {
+      border-color: transparent;
+    }
+  }
+  
+  .typewriter-animation::before {
+    animation: typingEffect 3s steps(6, end) forwards, blink 0.75s step-end infinite;
+  }
+
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-in-out;
+  }
+  
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .icon-spin {
+    animation: spin 0.5s ease-in-out;
+  }
+
+  
+  @keyframes pulse-slow {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.1); /* Slight increase in size */
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  @keyframes float {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px); /* Slight float up */
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-pulse-slow {
+    animation: pulse-slow 2s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  
+  .last-login-container {
+    border: 1px solid;
+    background-color: #f9fafb; /* light background for light mode */
+    border-radius: 8px;
+    padding: 12px 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+  }
+  
+  .last-login-container:hover {
+    transform: scale(1.05);
+    background-color: #e2e8f0; /* slightly darker background on hover */
+  }
+  
+  .last-login-container.dark {
+    background-color: #1f2937; /* dark background for dark mode */
+    border-color: #3b82f6;
+  }
+  
+  .last-login-container.dark:hover {
+    background-color: #374151; /* slightly darker background on hover for dark mode */
+  }
+
+  /* Define hover animation for the arrow */
+.last-login-container:hover .arrow-icon {
+    transform: translateX(5px); /* Move the arrow 5px to the right */
+  }
+
+  /* Floating Background */
+.floating-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+  }
+  
+  /* General Money Icon Styling */
+  .money-icon {
+    position: absolute;
+    color: rgba(255, 223, 0, 0.7); /* Adjust for a golden coin color */
+    font-size: 40px; /* Adjust the size of the icon */
+    animation: float 10s infinite ease-in-out;
+    opacity: 0.8;
+  }
+  
+  /* Specific Icon Sizes and Positions */
+  .icon1 { top: 10%; left: 20%; animation-duration: 6s; }
+  .icon2 { top: 40%; left: 50%; animation-duration: 8s; }
+  .icon3 { top: 60%; left: 80%; animation-duration: 12s; }
+  .icon4 { top: 80%; left: 10%; animation-duration: 9s; }
+  .icon5 { top: 20%; left: 70%; animation-duration: 7s; }
+  .icon6 { top: 50%; left: 30%; animation-duration: 10s; }
+  
+  /* Floating animation */
+  @keyframes float {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateY(-30px) rotate(180deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(0) rotate(360deg);
+      opacity: 0.7;
+    }
+  }
+
+  
+  
+  
+  

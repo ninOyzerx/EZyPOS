@@ -1,0 +1,10 @@
+/* custom.css */
+.navbar {
+    height: 50px; /* กำหนดความสูงของ header */
+    padding: 0.25rem 1rem; /* ปรับ padding ให้พอดี */
+  }
+  .navbar .nav-link {
+    padding: 0.25rem 0.5rem; /* ปรับ padding ของ nav links */
+    font-size: 14px; /* ปรับขนาดตัวอักษร */
+  }
+  

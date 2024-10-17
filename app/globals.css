@@ -1,0 +1,167 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'TH Sarabun New';
+  src: url('/fonts/THSarabunNew-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'TH Sarabun New';
+  src: url('/fonts/THSarabunNew-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'TH Sarabun PSK';
+  src: url('/fonts/THSarabun.ttf') format('truetype');
+}
+
+body {
+  font-family: 'TH Sarabun PSK', sans-serif;
+}
+
+
+
+
+
+@keyframes modalBounce {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes modalSlideOut {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+.animate-modal {
+  animation: modalBounce 0.3s ease-in-out forwards;
+}
+
+.slide-out {
+  animation: modalSlideOut 0.3s ease-in-out forwards;
+}
+
+
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* styles/globals.css */
+
+/* Keyframes for bouncing effect */
+@keyframes bounceIn {
+  0% {
+    right: -1000px; /* Start position off-screen */
+    transform: translateY(20px); /* Slight vertical movement for bounce effect */
+  }
+  60% {
+    right: 20px; /* End position on-screen */
+    transform: translateY(-10px); /* Move up to create bounce effect */
+  }
+  80% {
+    right: 20px; /* End position on-screen */
+    transform: translateY(5px); /* Move down to complete bounce effect */
+  }
+  100% {
+    right: 20px; /* Final on-screen position */
+    transform: translateY(0); /* Reset vertical movement */
+  }
+}
+
+@keyframes bounceOut {
+  0% {
+    right: 20px; /* Start position on-screen */
+    transform: translateY(0); /* Initial position */
+  }
+  20% {
+    right: 20px; /* Maintain position */
+    transform: translateY(-10px); /* Move up for bounce effect */
+  }
+  100% {
+    right: -1000px; /* End position off-screen */
+    transform: translateY(20px); /* Move down to exit */
+  }
+}
+
+.alert-banner {
+  position: fixed;
+  top: 20px;
+  right: -1000px; /* Start position off-screen */
+  background-color: #f44336; /* Red background */
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other elements */
+  transition: box-shadow 0.3s ease-in-out, transform 0.3s ease-in-out; /* Transition for shadow and position */
+  animation: bounceIn 0.6s ease-in-out; /* Apply bounce-in animation */
+}
+
+.alert-banner.show {
+  right: 20px; /* End position on-screen */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+}
+
+.alert-banner.hide {
+  animation: bounceOut 0.6s ease-in-out; /* Apply bounce-out animation */
+}
+
+.alert-banner:hover {
+  background-color: #d32f2f; /* Darker red on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4); /* More pronounced shadow on hover */
+}
+
+.alert-banner button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  margin-left: 15px;
+  cursor: pointer;
+  transition: color 0.3s ease-in-out; /* Smooth color change */
+}
+
+.alert-banner button:hover {
+  color: #ffebee; /* Lighten button color on hover */
+}
+
+
+
+
+
+
