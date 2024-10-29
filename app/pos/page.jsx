@@ -20,7 +20,8 @@ import LoadingStore from './loadingStoreDetails';
 
 import BarcodeScannerModal from '../components/barcodeScannerModal'; 
 
-import BarcodeScanProduct from '../components/barcodeScanProduct'; 
+// import BarcodeScanner from '../barcode-scanner'; 
+
 
 
 
@@ -35,8 +36,15 @@ export default function Component() {
   const [selectedProductName, setSelectedProductName] = useState('');
   const [userStoreId, setUserStoreId] = useState(null); // Store user store ID
 
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => {
+      setIsExpanded(!isExpanded);
+  };
+
   const [outOfStockToggle, setOutOfStockToggle] = useState(false); 
   const [progress, setProgress] = useState(0); 
+  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false); // สร้าง state สำหรับเปิด Barcode Modal
 
   const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
@@ -87,6 +95,7 @@ export default function Component() {
     store_img: '', // รูปภาพร้านค้า
   });
   const [pausedProducts, setPausedProducts] = useState([]);
+  
 
   const handlePauseProducts = () => {
     if (selectedProducts.length > 0) {
@@ -95,6 +104,7 @@ export default function Component() {
       setSelectedProducts([]);
     }
   };
+  
 
       // ฟังก์ชันสำหรับเปิด Category Grid
       const openCategoryGrid = () => {
@@ -145,6 +155,8 @@ export default function Component() {
             if (response.ok) {
                 const userData = await response.json();
                 setUserStoreId(userData.store_id); // Store store_id in state
+                localStorage.setItem('userStoreId', userData.store_id); // Save userStoreId in localStorage
+
             } else {
                 const errorData = await response.json();
                 console.error('Error fetching user data:', errorData.message); // Log the specific error message
@@ -176,6 +188,37 @@ export default function Component() {
 
     fetchUserData();
 }, []);
+
+let isAddingProduct = false; // ตัวแปรเพื่อป้องกันการเพิ่มซ้ำ
+
+useEffect(() => {
+  const handleBarcodeMessage = (event) => {
+    if (event.origin !== window.location.origin) {
+      return;
+    }
+
+    const { barcode } = event.data;
+    console.log('Barcode received:', barcode); 
+
+    if (barcode && userStoreId) { // ตรวจสอบว่ามี userStoreId หรือไม่ก่อนเรียกใช้งาน
+      if (!isAddingProduct) { // ตรวจสอบว่ากำลังเพิ่มสินค้าหรือไม่
+        console.log('Calling handleAddProductByBarcode with barcode:', barcode);
+        isAddingProduct = true; // ตั้งค่ากำลังเพิ่มสินค้า
+        handleAddProductByBarcode(barcode).finally(() => {
+          isAddingProduct = false; // คืนค่ากลับหลังจากการเพิ่มเสร็จสิ้น
+        });
+      }
+    } else {
+      console.error('userStoreId is undefined or null');
+    }
+  };
+
+  window.addEventListener('message', handleBarcodeMessage);
+
+  return () => {
+    window.removeEventListener('message', handleBarcodeMessage);
+  }; 
+}, [userStoreId]); // useEffect นี้จะทำงานใหม่เมื่อ userStoreId ถูกตั้งค่า
 
 const openAddProduct = () => {
   if (!manageCategories) {
@@ -687,6 +730,113 @@ const handleSelectChange = (e) => {
   };
 
 
+  
+
+
+  const handleAddProductByBarcode = async (barcode) => {
+    const sessionToken = localStorage.getItem('session');
+    const userStoreId = localStorage.getItem('userStoreId');
+
+    if (!userStoreId) {
+        console.error('userStoreId is undefined or null');
+        return;
+    }
+
+    if (!sessionToken) {
+        console.error('Session Token not found');
+        return;
+    }
+
+    try {
+        console.log(`Fetching product with barcode: ${barcode}, store_id: ${userStoreId}`);
+        const response = await fetch(`/api/products/${barcode}?store_id=${userStoreId}`, {
+            headers: {
+                Authorization: `Bearer ${sessionToken}`,
+            },
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่พบสินค้า',
+                    text: 'ไม่พบสินค้าในฐานข้อมูลหรือสินค้านี้ไม่อยู่ในร้านของคุณ',
+                    confirmButtonText: 'ตกลง',
+                    customClass: {
+                        confirmButton: 'custom-confirm-button',
+                        title: 'font-thai',
+                        htmlContainer: 'font-thai',
+                        confirmButton: 'font-thai',
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า',
+                    confirmButtonText: 'ตกลง',
+                    customClass: {
+                        confirmButton: 'custom-confirm-button',
+                        title: 'font-thai',
+                        htmlContainer: 'font-thai',
+                        confirmButton: 'font-thai',
+                    }
+                });
+            }
+            return;
+        }
+
+        const product = await response.json();
+        console.log('Product fetched:', product);
+
+        // อัปเดตสินค้าลงในตะกร้า
+        setSelectedProducts(prevProducts => {
+            const productInCart = prevProducts.find(item => item.product_code === barcode);
+
+            if (productInCart) {
+                // ถ้าสินค้าอยู่ในตะกร้า ให้เพิ่มจำนวน
+                return prevProducts.map(item =>
+                    item.product_code === barcode
+                        ? { ...item, quantity: item.quantity + 1 } // เพิ่มจำนวนสินค้า
+                        : item
+                );
+            } else {
+                // ถ้าไม่อยู่ในตะกร้า ให้เพิ่มสินค้าใหม่
+                return [...prevProducts, { ...product, quantity: 1 }];
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error fetching product by barcode:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: 'เกิดข้อผิดพลาดในการเพิ่มสินค้า',
+            confirmButtonText: 'ตกลง',
+            customClass: {
+                confirmButton: 'custom-confirm-button',
+                title: 'font-thai',
+                htmlContainer: 'font-thai',
+                confirmButton: 'font-thai',
+            }
+        });
+    }
+};
+
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+
+  
 
 
   useEffect(() => {
@@ -1566,92 +1716,10 @@ const handleDecreaseQuantity = (productName) => {
       
       <header className={`flex items-center justify-between h-13 px-4 ${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-gray-100 border-b'} shrink-0 md:px-6`}>
   {/* Section ปุ่ม Products และ Categories */}
-  <div className="flex items-center gap-4 font-thai text-xl">
-  <div className="flex items-center">
-  {/* ปุ่มลบสินค้า */}
-  <button
-   onClick={barcodeToggleModal}
-    className={`flex items-center ${
-      darkMode
-        ? 'bg-red-600 hover:bg-red-700 text-white'
-        : 'bg-red-400 hover:bg-red-500 text-black'
-    }  font-semibold py-3 px-4 rounded-l-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md`}
-  >
-    <AiOutlineBarcode className="w-5 h-5" />
-  </button>
 
-  {/* ปุ่มจัดการสินค้า */}
-  <button
-  className={`flex items-center ${
-    darkMode
-      ? 'bg-teal-600 hover:bg-teal-700 text-white rounded-none'
-      : 'bg-teal-400 hover:bg-teal-500 text-black rounded-none'
-  } font-semibold py-2 px-4 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md cursor-default`}
-  disabled
->
-  <PackageIcon className="w-5 h-5 mr-2" />
-  จัดการสินค้า
-</button>
-
-
-  {/* ปุ่มเพิ่มสินค้า */}
-  <button
-    onClick={openAddProduct}
-    className={`${
-      darkMode
-        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-        : 'bg-yellow-400 hover:bg-yellow-500 text-black'
-    } font-bold py-2 px-3 rounded-r-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md`}
-  >
-    +
-  </button>
-</div>
-
-    {/* ปุ่ม Categories */}
-    <div className="flex items-center">
-
-{/* ปุ่มลบ Categories */}
-{/* <button
-  className={`flex items-center ${
-    darkMode
-      ? 'bg-red-600 hover:bg-red-700 text-white'
-      : 'bg-red-400 hover:bg-red-500 text-black'
-  }  font-semibold py-3 px-4 rounded-l-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md`}
->
-  <AiOutlineBarcode className="w-5 h-5" />
-</button> */}
-
-{/* ปุ่มจัดการหมวดหมู่ */}
-<button
-  className={`flex items-center ${
-    darkMode
-      ? 'bg-teal-600 hover:bg-teal-700 text-white'
-      : 'bg-teal-400 hover:bg-teal-500 text-black'
-  }  font-semibold py-2 px-4 rounded-l-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md cursor-default`}
->
-  <LayoutGridIcon className="w-5 h-5 mr-2" />
-  จัดการหมวดหมู่
-</button>
-
-{/* ปุ่มเพิ่ม Categories */}
-<button
-  onClick={openAddCategory} // Add onClick event handler here
-  className={`${
-    darkMode
-      ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-      : 'bg-yellow-400 hover:bg-yellow-500 text-black'
-  } font-bold py-2 px-3 rounded-r-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md`}
->
-  +
-</button>
-
-
-</div>
-
-  </div>
 
   {/* Section ข้อมูลด้านขวา เช่น เวลาและชื่อร้าน */}
-  <div className="flex-grow text-center font-thai">
+  <div className="flex flex-grow justify-center items-center font-thai">
   <span className={`text-3xl ${darkMode ? 'text-gray-100' : 'text-gray-900'} inline-flex items-center`}>
     <span className="mr-2">{currentTime}</span> 
     {storeData.store_name} 
@@ -1665,9 +1733,9 @@ const handleDecreaseQuantity = (productName) => {
     >
       <Settings className="w-6 h-6" />
     </button>
-  
   </span>
 </div>
+
 
 
 
@@ -1769,13 +1837,48 @@ const handleDecreaseQuantity = (productName) => {
       placeholder="ใส่รหัสบาร์โค้ด และ กด Enter หรือ กดที่ปุ่มบาร์โค้ดด้านขวา" 
       className={`text-2xl input input-bordered w-[807px] py-2 px-3 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`} 
     />
-    <div
-      className={`absolute right-0 top-0 p-2 rounded-md cursor-pointer transition-all transform hover:scale-105 hover:bg-opacity-80 
-        ${darkMode ? 'text-white hover' : 'text-black hover'}`}
-      // onClick={() => BarcodeScanProduct(true)} // Trigger the barcode scanner modal here
-    >
-      <AiOutlineBarcode className="w-8 h-8" /> {/* Barcode icon inside the input */}
-    </div>
+<div
+  className={`absolute right-0 top-0 p-2 rounded-md cursor-pointer transition-all transform hover:scale-105 hover:bg-opacity-80 
+    ${darkMode ? 'text-white hover' : 'text-black hover'}`}
+  onClick={() => {
+    const barcodeScannerWindow = window.open(
+      '/barcode-scanner',
+      '_blank',
+      'width=500,height=350,resizable=no,scrollbars=no,toolbar=no,location=no,status=no,menubar=no'
+    );
+    
+    barcodeScannerWindow.onload = () => {
+      console.log('Barcode scanner window opened');
+    };
+
+    const handleBarcodeMessage = (event) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+      const { barcode } = event.data;
+      console.log('Barcode received:', barcode);
+
+      if (barcode) {
+        handleAddProductByBarcode(barcode);
+      }
+
+      window.removeEventListener('message', handleBarcodeMessage);
+    };
+
+    window.addEventListener('message', handleBarcodeMessage);
+
+    barcodeScannerWindow.onbeforeunload = () => {
+      window.removeEventListener('message', handleBarcodeMessage);
+    };
+  }}
+>
+  <AiOutlineBarcode className="w-8 h-8" />
+</div>
+
+
+
+
+
 </div>
 
         <div className={`p-4 h-[calc(100vh-120px)] ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-900'} rounded-md`}>

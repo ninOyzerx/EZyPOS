@@ -56,6 +56,10 @@ const Dashboard = () => {
 
 
     const [searchTerm, setSearchTerm] = useState("");
+    const sanitizeInput = (input) => {
+        return input.trim().replace(/\s+/g, ' '); // Remove leading/trailing spaces and replace multiple spaces with a single space
+    };
+
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [products, setProducts] = useState([]); // Initialize products as an empty array
@@ -2352,7 +2356,7 @@ useEffect(() => {
                             type="text"
                             placeholder="ค้นหารหัสการทำรายการ..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => setSearchTerm(sanitizeInput(e.target.value))}
                             className="text-2xl px-4 py-2 rounded-lg"
                             style={{
                                 backgroundColor: darkMode ? '#2c2c2e' : '#fff',

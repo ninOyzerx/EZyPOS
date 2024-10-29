@@ -20,8 +20,13 @@ const SettingsModal = ({ isVisible, onClose, storeId, onUpdateStore, darkMode })
   const [showStoreImage, setShowStoreImage] = useState(true);
 const [showAddress, setShowAddress] = useState(true);
 const [showPhoneNumber, setShowPhoneNumber] = useState(true);
+const [removeImage, setRemoveImage] = useState(false); // state สำหรับลบรูปภาพ
 
 
+const handleRemoveImage = () => {
+  setPreviewImg(null); // ลบ preview รูปภาพ
+  setRemoveImage(true); // ตั้งค่าให้ลบรูปภาพ
+};
 
   useEffect(() => {
     if (isVisible && storeId) {
@@ -62,12 +67,46 @@ const [showPhoneNumber, setShowPhoneNumber] = useState(true);
 
   const handleUpload = (e) => {
     const file = e.target.files[0];
+  
     if (file) {
+      const fileType = file.type;
+  
+      // ตรวจสอบว่าไฟล์ที่อัปโหลดเป็นวิดีโอหรือไม่
+      if (fileType.startsWith('video/')) {
+        Swal.fire({
+          title: 'ข้อผิดพลาด',
+          text: 'ไม่สามารถอัปโหลดวิดีโอได้ กรุณาเลือกไฟล์รูปภาพเท่านั้น',
+          icon: 'error',
+          confirmButtonText: 'ตกลง',
+          customClass: {
+            title: 'font-thai',
+            htmlContainer: 'font-thai',
+            confirmButton: 'font-thai',
+          },
+          willOpen: () => {
+            document.querySelector('.swal2-title').style.fontSize = '35px';
+            document.querySelector('.swal2-html-container').style.fontSize = '25px';
+            const confirmButton = document.querySelector('.swal2-confirm');
+            confirmButton.style.fontSize = '24px';
+            confirmButton.style.padding = '6px 24px';
+            confirmButton.style.backgroundColor = '#3085d6';
+            confirmButton.style.color = '#fff';
+          }
+        });
+  
+        // รีเซ็ตช่อง input file
+        e.target.value = ''; 
+        return; // หยุดการอัปโหลดถ้าเป็นไฟล์วิดีโอ
+      }
+  
+      // ถ้าเป็นไฟล์รูปภาพ ให้แสดง preview
       const fileUrl = URL.createObjectURL(file);
       setPreviewImg(fileUrl);
       setImageFile(file);
     }
   };
+  
+  
 
   const handlePostalCodeChange = async (e) => {
     const postalCode = e.target.value;
@@ -151,6 +190,11 @@ const [showPhoneNumber, setShowPhoneNumber] = useState(true);
     if (imageFile) {
       formData.append('store_img', imageFile);
     }
+
+    if (removeImage) {
+      formData.append('remove_image', 'true');
+    }
+  
   
     try {
       const response = await fetch('/api/stores/update', {
@@ -420,15 +464,19 @@ const closeReceiptSettingsModal = () => {
   
             {/* แสดงรูปภาพร้านค้า */}
             {previewImg && (
-              <div className="w-1/2 mt-4 animate-scaleIn flex justify-end">
-                <img
-                  src={previewImg}
-                  alt="Current Store"
-                  className="w-24 h-24 object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
-                  onClick={toggleFullScreenImage}
-                />
-              </div>
-            )}
+  <div className="w-1/2 mt-4 animate-scaleIn flex flex-col justify-end items-center">
+    <img
+      src={previewImg}
+      alt="Current Store"
+      className="w-24 h-24 object-cover rounded-lg shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
+      onClick={toggleFullScreenImage}
+    />
+    <button onClick={handleRemoveImage} className="text-xl mt-2 text-red-500 hover:text-red-700">
+      ลบรูปภาพ
+    </button>
+  </div>
+)}
+
 
 
           </div>
