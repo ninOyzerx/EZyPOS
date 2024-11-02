@@ -7,7 +7,9 @@ import Loading from './loading';
 import PaymentModal from '../components/keypad/paymentModal';
 import QuantityModal from '../components/keypad/quantityModal';
 import ChangeQuantityModal from '../components/keypad/changeQuantityModal';
-import { TicketPercent, ListFilter, ArrowDownNarrowWide, ArrowUpNarrowWide, ClockArrowUp ,Package,HandCoins,Pause,LayoutList  } from 'lucide-react';
+import { TicketPercent, ListFilter, ArrowDownNarrowWide, ArrowUpNarrowWide, ClockArrowUp ,Package,HandCoins,Pause,LayoutList  
+  ,Menu
+} from 'lucide-react';
 import { RxReload } from "react-icons/rx";
 import { AiFillEdit , AiOutlineBarcode} from "react-icons/ai";
 import { FaTrash , FaArrowTrendDown} from "react-icons/fa6";
@@ -94,16 +96,7 @@ export default function Component() {
     store_phone_no: '', // เบอร์โทรศัพท์ร้านค้า
     store_img: '', // รูปภาพร้านค้า
   });
-  const [pausedProducts, setPausedProducts] = useState([]);
-  
 
-  const handlePauseProducts = () => {
-    if (selectedProducts.length > 0) {
-      setPausedProducts([...pausedProducts, ...selectedProducts]);
-      // เคลียร์รายการสินค้าใน selectedProducts หลังจากพักสินค้า
-      setSelectedProducts([]);
-    }
-  };
   
 
       // ฟังก์ชันสำหรับเปิด Category Grid
@@ -139,13 +132,57 @@ export default function Component() {
     }
 };
 
-  // ฟังก์ชันสำหรับนำสินค้าที่ถูกพักกลับมาใช้งาน
-  const handleContinueOrder = (product) => {
-    // เพิ่มสินค้าที่ถูกพักกลับเข้าสู่รายการ selectedProducts
-    setSelectedProducts([...selectedProducts, product]);
-    // นำสินค้านั้นออกจาก pausedProducts
-    setPausedProducts(pausedProducts.filter((p) => p.product_code !== product.product_code));
-  };
+const [pausedProducts, setPausedProducts] = useState([]);
+
+// โหลด pausedProducts จาก localStorage
+useEffect(() => {
+  const savedPausedProducts = localStorage.getItem('pausedProducts');
+  if (savedPausedProducts) {
+    setPausedProducts(JSON.parse(savedPausedProducts));
+  }
+}, []);
+
+const handlePauseProducts = () => {
+  // เช็คว่าจำนวนสินค้าที่พักไว้เกิน 3 หรือไม่
+  if (pausedProducts.length + selectedProducts.length > 3) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'เกินจำนวนที่อนุญาต',
+      text: 'คุณสามารถพักสินค้าได้สูงสุด 3 รายการเท่านั้น',
+      confirmButtonText: 'ตกลง'
+    });
+    return;
+  }
+
+  // บันทึกรายการที่พักไว้ใน localStorage
+  const updatedPausedProducts = [...pausedProducts, ...selectedProducts];
+  setPausedProducts(updatedPausedProducts);
+  localStorage.setItem('pausedProducts', JSON.stringify(updatedPausedProducts));
+
+  // เคลียร์ selectedProducts และ localStorage เพื่อเตรียมพร้อมสำหรับลูกค้าคนถัดไป
+  setSelectedProducts([]);
+  localStorage.removeItem('selectedProducts'); // เคลียร์ selectedProducts ใน localStorage
+};
+
+const handleContinueOrder = (product) => {
+  // เพิ่มสินค้าที่พักไว้กลับไปยัง selectedProducts
+  setSelectedProducts((prev) => [...prev, product]);
+  localStorage.setItem('selectedProducts', JSON.stringify([...selectedProducts, product]));
+  
+  // ลบสินค้านั้นออกจาก pausedProducts
+  const updatedPausedProducts = pausedProducts.filter((p) => p !== product);
+  setPausedProducts(updatedPausedProducts);
+  localStorage.setItem('pausedProducts', JSON.stringify(updatedPausedProducts));
+};
+
+// ใน useEffect เพื่อโหลด selectedProducts เมื่อมีการรีเฟรช
+useEffect(() => {
+  const savedSelectedProducts = localStorage.getItem('selectedProducts');
+  if (savedSelectedProducts) {
+    setSelectedProducts(JSON.parse(savedSelectedProducts));
+  }
+}, []);
+
 
 
   useEffect(() => {
@@ -1716,7 +1753,35 @@ const handleDecreaseQuantity = (productName) => {
       
       <header className={`flex items-center justify-between h-13 px-4 ${darkMode ? 'bg-gray-800 border-b border-gray-700' : 'bg-gray-100 border-b'} shrink-0 md:px-6`}>
   {/* Section ปุ่ม Products และ Categories */}
-
+  <div className="dropdown  dropdown-right">
+  <div
+    tabIndex={0}
+    className="font-thai text-3xl rounded-btn cursor-pointer flex items-center transition-transform duration-300 hover:scale-105"
+    onClick={() => document.getElementById('dropdown-menu').classList.toggle('hidden')} 
+  >
+    <Menu className="w-7 h-7 mr-2" />
+    Menu
+  </div>
+  <ul
+    id="dropdown-menu"
+    tabIndex={0}
+    className="menu dropdown-content bg-base-100 rounded-box z-[1] mt-4 w-52 p-2 shadow hidden"
+  >
+    <li>
+      <button
+        onClick={handleDashboardClick} // Add onClick event to the button
+        className={`font-thai text-2xl text-left w-full ${
+            darkMode
+                ? 'bg-blue-800 hover:bg-blue-900 text-gray-200' // Dark mode styles
+                : 'bg-yellow-400 hover:bg-yellow-500 text-black'  // Light mode styles
+        } font-semibold py-1 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md flex items-center`}
+      >
+        <LayoutDashboard className="w-7 h-7 mr-2" />
+        <span>Dashboard</span>
+      </button>
+    </li>
+  </ul>
+</div>
 
   {/* Section ข้อมูลด้านขวา เช่น เวลาและชื่อร้าน */}
   <div className="flex flex-grow justify-center items-center font-thai">
@@ -1740,6 +1805,8 @@ const handleDecreaseQuantity = (productName) => {
 
 
 
+
+
   <div className="flex items-center gap-2 sm:gap-4 ">
 
       <SettingsModal 
@@ -1752,17 +1819,7 @@ const handleDecreaseQuantity = (productName) => {
 />
 
 
-<button
-            onClick={handleDashboardClick} // Add onClick event to the button
-            className={`ml-2 font-thai text-2xl ${
-                darkMode
-                    ? 'bg-blue-800 hover:bg-blue-900 text-gray-200' // Dark mode styles
-                    : 'bg-yellow-400 hover:bg-yellow-500 text-black'  // Light mode styles
-            } font-semibold py-1 px-3 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-md flex items-center`}
-        >
-            <LayoutDashboard className="w-6 h-6 mr-2" />
-            <span>Dashboard</span>
-        </button>
+
 
 
     {/* <button className={`btn ${darkMode ? 'bg-purple-600 text-white' : 'bg-purple-500 text-white'} gap-2`} onClick={handleDashboardClick}>
@@ -1809,28 +1866,28 @@ const handleDecreaseQuantity = (productName) => {
 
 
       <main className={`flex flex-1 p-4 font-thai text-2xl ${darkMode ? 'bg-gray-900' : 'bg-gray-200'} md:p-3`}>
-      <div className={`flex flex-col w-full sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 h-[calc(100vh-87px)] p-4  ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-white bg-opacity-50 text-gray-900'} border rounded-md`}>
-      <div className="relative flex items-center">
-        <select
+      <div className={`flex flex-col w-full sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 h-[calc(100vh-65px)] p-4  ${darkMode ? 'bg-gray-700 text-gray-200' : 'bg-white bg-opacity-50 text-gray-900'} border rounded-md`}>
+      {/* <div className="relative flex items-center"> */}
+        {/* <select
           className={`text-2xl select select-bordered w-[748px] py-2 px-3 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
           value={selectedCustomer}
           onChange={handleSelectChange}
-        >
-          <option value="walkin">ลูกค้าที่มาใช้บริการในร้าน</option>
+        > */}
+          {/* <option value="walkin">ลูกค้าที่มาใช้บริการในร้าน</option> */}
           {/* Dynamically render customer options from fetched data */}
-          {customers.map((customer) => (
+          {/* {customers.map((customer) => (
             <option key={customer.id} value={customer.id}>
               {customer.phone_no} {customer.name}
             </option>
-          ))}
-        </select>
-        <div
+          ))} */}
+        {/* </select> */}
+        {/* <div
           className={`p-2 rounded-md cursor-pointer transition-all transform hover:scale-105 hover:bg-opacity-80 
             ${darkMode ? 'text-white hover' : 'text-black hover'}`}
         >
           <IoMdPersonAdd className="w-8 h-8" />
-        </div>
-      </div>
+        </div> */}
+      {/* </div> */}
   <div className="relative flex items-center">
     <input 
       type="text" 
@@ -2009,54 +2066,64 @@ const handleDecreaseQuantity = (productName) => {
           </div>
         </div>
       )}
-      <div className="flex justify-between font-bold text-2xl mb-3 border-b pb-4">
+      <div className="flex justify-between font-bold text-2xl mb-6 border-b pb-4">
         <span>รวมสุทธิ</span>
         <span className="text-orange-500 text-2xl">{fullTotalPrice.toFixed(2)} ฿</span>
       </div>
       <div className="flex justify-between space-x-4">
-      <button
-        className={`flex items-center py-3 px-6 rounded-lg shadow-lg focus:outline-none transition-colors duration-300 
-          ${darkMode ? 'bg-gray-600 text-white' : 'bg-gray-500 text-white'} 
-          ${selectedProducts.length === 0 ? 'opacity-50 cursor-not-allowed' : darkMode ? 'hover:bg-gray-500' : 'hover:bg-gray-600'}`}
-        disabled={selectedProducts.length === 0}
-        onClick={handlePauseProducts}
-      >
-        <Pause className="w-4 h-4 mr-2" />
-        พักชั่วคราว
-      </button>
-      {pausedProducts.length > 0 && (
-        <div className="mt-4">
-          <h3 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-black'}`}>
-            รายการที่พักไว้
-          </h3>
-          <ul className="mt-2">
-            {pausedProducts.map((product, index) => (
-              <li
-                key={index}
-                className={`flex items-center justify-between p-2 mb-2 rounded-lg shadow-md ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100 text-black'}`}
-              >
-                <span>{product.product_name}</span>
-                <button
-                  className={`ml-4 py-1 px-4 rounded-lg focus:outline-none transition-colors duration-300 ${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}
-                  onClick={() => handleContinueOrder(product)}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  ดำเนินการต่อ
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-        <button
-          onClick={handlePaymentClick}
-          className={`flex items-center py-3 px-6 rounded-lg shadow-lg focus:outline-none transition-colors duration-300 ${darkMode ? 'bg-green-600 text-white' : 'bg-green-500 text-white'} ${selectedProducts.length === 0 ? 'opacity-50 cursor-not-allowed' : darkMode ? 'hover:bg-green-500' : 'hover:bg-green-600'}`}
-          disabled={selectedProducts.length === 0}
-        >
-          <HandCoins className="w-4 h-4 mr-2" />
-          ชำระเงิน
-        </button>
+      <div className="flex flex-wrap">
+  <div className="flex flex-col items-start">
+    {/* ปุ่มพักสินค้า */}
+    <button
+      className={`flex items-center py-4 px-6 rounded-lg shadow-lg focus:outline-none transition-colors duration-300 
+          ${darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'} 
+          ${selectedProducts.length === 0 ? 'opacity-50 cursor-not-allowed' : darkMode ? 'hover:bg-blue-500' : 'hover:bg-blue-600'}`}
+      onClick={handlePauseProducts}
+      disabled={selectedProducts.length === 0}
+    >
+      <Pause className="w-7 h-7 mr-2" />
+      พักชั่วคราว
+    </button>
+    
+    {/* แสดงลิสที่พัก */}
+    {pausedProducts.length > 0 && (
+      <div className="flex mt-2 mb-[-8px]">
+        {pausedProducts.map((product, index) => (
+          <div
+            key={index}
+            className="relative mx-1  cursor-pointer"
+            onClick={() => handleContinueOrder(product)} // ฟังก์ชันการคลิก
+          >
+            <div
+              className={`w-12 h-12 flex items-center justify-center 
+                ${darkMode ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-blue-500 text-white hover:bg-blue-600'}
+                rounded-full text-2xl transition-colors duration-300`}
+            >
+              {index + 1}
+            </div>
+          </div>
+        ))}
       </div>
+    )}
+  </div>
+
+
+
+
+
+</div>
+
+
+<button
+    onClick={handlePaymentClick}
+    className={`flex items-center py-4 px-6 rounded-lg shadow-lg focus:outline-none transition-colors duration-300 ${darkMode ? 'bg-green-600 text-white' : 'bg-green-500 text-white'} ${selectedProducts.length === 0 ? 'opacity-50 cursor-not-allowed' : darkMode ? 'hover:bg-green-500' : 'hover:bg-green-600'}`}
+    disabled={selectedProducts.length === 0}
+    style={{ marginLeft: '10px', height: '68px' }} // ปรับให้มีความสูงเท่ากับปุ่มพัก
+  >
+    <HandCoins className="w-7 h-7 mr-2" />
+    ชำระเงิน
+  </button>
+</div>
 
 
 
@@ -2110,7 +2177,7 @@ const handleDecreaseQuantity = (productName) => {
 
         </div>
 
-        <div className={`flex flex-col flex-1 p-4 mt md:ml-3 sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 h-[calc(100vh-87px)] ${darkMode ? 'bg-gray-700' : 'bg-white'} bg-opacity-50 border rounded-md`}>
+        <div className={`flex flex-col flex-1 p-4 mt md:ml-3 sm:w-3/4 md:w-2/3 lg:w-1/2 xl:w-1/3 h-[calc(100vh-65px)] ${darkMode ? 'bg-gray-700' : 'bg-white'} bg-opacity-50 border rounded-md`}>
         <label className={`input input-bordered flex items-center gap-2 transition-all duration-300 ease-in-out ${darkMode ? 'bg-gray-600 text-gray-200' : 'bg-gray-100 text-black'} mb-4`}>
         <input
   type="text"

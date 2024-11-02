@@ -73,17 +73,18 @@ const Dashboard = () => {
     const [selectedDate, setSelectedDate] = useState('');
 
 
-    const paginatedOrders = orders.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+// ฟิลเตอร์ข้อมูลก่อน
+const filteredOrders = orders.filter(order => {
+    const matchesTransactionId = order.transaction_id.includes(searchTerm);
+    const matchesDate = selectedDate
+        ? new Date(order.created_at).toLocaleDateString('th-TH') === new Date(selectedDate).toLocaleDateString('th-TH')
+        : true;
 
+    return matchesTransactionId && matchesDate;
+});
 
-    const filteredOrders = paginatedOrders.filter(order => {
-        const matchesTransactionId = order.transaction_id.includes(searchTerm);
-        const matchesDate = selectedDate
-            ? new Date(order.created_at).toLocaleDateString('th-TH') === new Date(selectedDate).toLocaleDateString('th-TH')
-            : true;
-
-        return matchesTransactionId && matchesDate;
-    });
+// แบ่งหน้า
+const paginatedOrders = filteredOrders.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
 
 const openLowStockModal = () => {
@@ -2378,52 +2379,57 @@ useEffect(() => {
                     </div>
         
                     <div className="w-full p-0 overflow-x-auto">
-                        <table className="min-w-full table-auto text-center" style={{ backgroundColor: darkMode ? '#2c2c2e' : '#fff' }}>
-                            <thead>
-                                <tr className="uppercase text-2xl leading-normal" style={{ backgroundColor: darkMode ? '#3a3a3c' : '#f8f9fa', color: darkMode ? '#fff' : '#000' }}>
-                                    <th className="py-3 px-6 text-left">รหัสการทำรายการ</th>
-                                    <th className="py-3 px-6 text-left">จำนวนเงินที่ชำระ</th>
-                                    <th className="py-3 px-6 text-left">วิธีการชำระเงิน</th>
-                                    <th className="py-3 px-6 text-left">วันที่</th>
-                                    <th className="py-3 px-6 text-left"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-2xl font-light" style={{ color: darkMode ? '#fff' : '#000' }}>
-                                {filteredOrders.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((order) => (
-                                    <tr key={order.id}
-                                        className="border-b"
-                                        style={{
-                                            backgroundColor: darkMode ? '#2c2c2e' : '#fff',
-                                            borderColor: darkMode ? '#444' : '#eaeaea',
-                                            transition: 'background-color 0.3s ease',
-                                        }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = darkMode ? '#444' : '#f0f0f0'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = darkMode ? '#2c2c2e' : '#fff'}
-                                    >
-                                        <td className="py-3 px-6 text-left">{order.transaction_id}</td>
-                                        <td className="py-3 px-6 text-left">฿{parseFloat(order.paid_amount).toFixed(2)}</td>
-                                        <td className="py-3 px-6 text-left">{order.payment_method}</td>
-                                        <td className="py-3 px-6 text-left">
-                                            {new Date(order.created_at).toLocaleString('th-TH', {
-                                                year: 'numeric',
-                                                month: 'short',
-                                                day: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
-                                        </td>
-                                        <td className="py-3 px-6 text-left">
-                                        <Eye
-  size={40} 
-  onClick={() => viewReceipt(order)}
-  className="text-blue-500 cursor-pointer p-2 rounded hover:text-white transition-colors hover:scale-110 transition-transform"
-/>
-             
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <table className="min-w-full table-auto text-center" style={{ backgroundColor: darkMode ? '#2c2c2e' : '#fff' }}>
+    <thead>
+        <tr className="uppercase text-2xl leading-normal" style={{ backgroundColor: darkMode ? '#3a3a3c' : '#f8f9fa', color: darkMode ? '#fff' : '#000' }}>
+            <th className="py-3 px-6 text-left">รหัสการทำรายการ</th>
+            <th className="py-3 px-6 text-left">จำนวนเงินที่รับมา</th>
+            <th className="py-3 px-6 text-left">จำนวนเงินทอน</th>
+            <th className="py-3 px-6 text-left">สุทธิ</th>
+            <th className="py-3 px-6 text-left">วิธีการชำระเงิน</th>
+            <th className="py-3 px-6 text-left">วันที่</th>
+
+            <th className="py-3 px-6 text-left"></th>
+        </tr>
+    </thead>
+    <tbody className="text-2xl font-light" style={{ color: darkMode ? '#fff' : '#000' }}>
+        {filteredOrders.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage).map((order) => (
+            <tr key={order.id}
+                className="border-b"
+                style={{
+                    backgroundColor: darkMode ? '#2c2c2e' : '#fff',
+                    borderColor: darkMode ? '#444' : '#eaeaea',
+                    transition: 'background-color 0.3s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = darkMode ? '#444' : '#f0f0f0'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = darkMode ? '#2c2c2e' : '#fff'}
+            >
+                <td className="py-3 px-6 text-left">{order.transaction_id}</td>
+                <td className="py-3 px-6 text-left">฿{parseFloat(order.paid_amount).toFixed(2)}</td>
+                <td className="py-3 px-6 text-left">฿{parseFloat(order.change).toFixed(2)}</td>
+                <td className="py-3 px-6 text-left">฿{(parseFloat(order.paid_amount) - parseFloat(order.change)).toFixed(2)}</td>
+                <td className="py-3 px-6 text-left">{order.payment_method}</td>
+                <td className="py-3 px-6 text-left">
+                    {new Date(order.created_at).toLocaleString('th-TH', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })}
+                </td>
+                <td className="py-3 px-6 text-left">
+                    <Eye
+                        size={40} 
+                        onClick={() => viewReceipt(order)}
+                        className="text-blue-500 cursor-pointer p-2 rounded hover:text-white transition-colors hover:scale-110 transition-transform"
+                    />
+                </td>
+            </tr>
+        ))}
+    </tbody>
+</table>
+
         
                         {/* Pagination Buttons */}
                         <div className="flex justify-between mt-4">
@@ -2460,18 +2466,19 @@ useEffect(() => {
         >
             <h2 className="text-4xl font-bold mb-4 text-center">ใบเสร็จรับเงิน</h2>
             <div className="mb-4">
-                <p className="text-3xl"><strong>รหัสการทำรายการ :</strong> {selectedOrder.transaction_id}</p>
-                <p className="text-3xl"><strong>วันที่ทำรายการ :</strong> {new Date(selectedOrder.created_at).toLocaleString('th-TH', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                })}</p>
-                <p className="text-3xl"><strong>จำนวนเงินที่ชำระ :</strong> ฿{parseFloat(selectedOrder.paid_amount).toFixed(2)}</p>
-                <p className="text-3xl"><strong>วิธีการชำระเงิน :</strong> {selectedOrder.payment_method}</p>
-                <p className="text-3xl"><strong>เงินทอน :</strong> ฿{parseFloat(selectedOrder.change).toFixed(2)}</p>
-            </div>
+    <p className="text-3xl"><strong>รหัสการทำรายการ :</strong> {selectedOrder.transaction_id}</p>
+    <p className="text-3xl"><strong>วันที่ทำรายการ :</strong> {new Date(selectedOrder.created_at).toLocaleString('th-TH', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    })}</p>
+    <p className="text-3xl"><strong>จำนวนเงินที่ชำระ :</strong> ฿{parseFloat(selectedOrder.paid_amount).toFixed(2)}</p>
+    <p className="text-3xl"><strong>วิธีการชำระเงิน :</strong> {selectedOrder.payment_method}</p>
+    <p className="text-3xl"><strong>เงินทอน :</strong> ฿{parseFloat(selectedOrder.change).toFixed(2)}</p>
+    <p className="text-3xl"><strong>สุทธิ :</strong> ฿{(parseFloat(selectedOrder.paid_amount) - parseFloat(selectedOrder.change)).toFixed(2)}</p>
+</div>
 
             <h3 className="text-3xl font-bold mt-4 mb-3">รายการสินค้า</h3>
             <ul className="mb-4 space-y-2">
@@ -2485,7 +2492,7 @@ useEffect(() => {
 
             <div className="flex justify-between text-3xl font-bold border-t border-gray-300 pt-3 mt-4">
                 <span>ยอดรวมทั้งหมด</span>
-                <span>฿{parseFloat(selectedOrder.paid_amount).toFixed(2)}</span>
+                <span>฿{(parseFloat(selectedOrder.paid_amount) - parseFloat(selectedOrder.change)).toFixed(2)}</span>
             </div>
 
             <button 
