@@ -54,6 +54,10 @@ export default function Component() {
   const [isCategoryGridOpen, setIsCategoryGridOpen] = useState(false); // เปลี่ยนชื่อ state เป็น isCategoryGridOpen
   
   const [filterProducts, setFilterProducts] = useState(products);
+  const [selectFilterProducts, setSelectFilterProducts] = useState(products);
+  const [sortedProducts, setSortedProducts] = useState([]);
+
+    
 
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false); // State to manage dropdown visibility
 
@@ -426,7 +430,7 @@ const addProduct = async (productData) => {
             confirmButton.style.color = '#fff'; 
         }
     });
-      fetchProducts(); // Reload products list after adding a new one
+      fetchProducts(); 
     } else {
       Swal.fire('Error', result.message || 'ไม่สามารถเพิ่มสินค้าได้', 'error');
     }
@@ -722,39 +726,52 @@ const handleSelectChange = (e) => {
   };
   
   const handleSortOption = (option) => {
-    setSortOption(option); // เปลี่ยนค่า sortOption เมื่อผู้ใช้เลือกตัวเลือกการกรองหรือเรียงลำดับ
+    setSortOption(option);
+    setFilterDropdownOpen(false); // ปิด dropdown หลังจากเลือก option
   };
   
   useEffect(() => {
     let tempProducts = [...products];
-
+  
     // Filter by category
     if (selectedCategory !== null) {
       tempProducts = tempProducts.filter(product => product.category_id === selectedCategory);
     }
-
+  
     // Filter out of stock products if sortOption is 'out-of-stock'
     if (sortOption === 'out-of-stock') {
       tempProducts = tempProducts.filter(product => product.stock_quantity === 0);
-    } 
-
-    // Sort products based on selected sort option
-    if (sortOption === 'latest') {
-      tempProducts = tempProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Newest first
-    } else if (sortOption === 'price-low-high') {
-      tempProducts = tempProducts.sort((a, b) => a.price - b.price); // Lowest price first
-    } else if (sortOption === 'price-high-low') {
-      tempProducts = tempProducts.sort((a, b) => b.price - a.price); // Highest price first
+    } else {
+      // Sort products based on selected sort option
+      if (sortOption === 'latest') {
+        tempProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Newest first
+      } else if (sortOption === 'price-low-high') {
+        tempProducts.sort((a, b) => a.price - b.price); // Lowest price first
+      } else if (sortOption === 'price-high-low') {
+        tempProducts.sort((a, b) => b.price - a.price); // Highest price first
+      }
     }
-
-    // Set filtered and sorted products
-    setFilterProducts(tempProducts);
-  }, [selectedCategory, sortOption, products]);
-
-  const filteredProducts = products.filter((product) =>
-    product.product_name.toLowerCase().includes(searchTerm.trim().toLowerCase()) || // ใช้ trim() เพื่อตัดช่องว่างทั้งสองด้านของ searchTerm
+  
+    // Separate in-stock and out-of-stock products
+    const inStockProducts = tempProducts.filter(product => product.stock_quantity > 0);
+    const outOfStockProducts = tempProducts.filter(product => product.stock_quantity === 0);
+  
+    // Combine in-stock and out-of-stock products based on sort option
+    if (sortOption === 'out-of-stock') {
+      setSortedProducts(outOfStockProducts);
+    } else {
+      setSortedProducts([...inStockProducts, ...outOfStockProducts]);
+    }
+  
+  }, [products, selectedCategory, sortOption]); // Dependencies for useEffect
+  
+  const filteredProducts = sortedProducts.filter((product) =>
+    product.product_name.toLowerCase().includes(searchTerm.trim().toLowerCase()) ||
     (product.barcode && product.barcode.includes(searchTerm.trim()))
   );
+  
+    
+
 
   // const filteredSelectedCategories = categories.filter((category) =>
   //   category.name.toLowerCase().includes(searchCategoriesTerm.trim().toLowerCase())
@@ -2364,58 +2381,58 @@ const handleDecreaseQuantity = (productName) => {
         <ul
           className={`absolute z-50 mt-2 shadow-lg rounded-md py-1 w-48 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'}`}
           style={{
-            maxHeight: '200px', // Set max height for the dropdown
-            overflowY: 'auto',  // Enable scrolling if content exceeds max height
-            right: 0,           // Align dropdown to the right of the button
+            maxHeight: '200px',
+            overflowY: 'auto',
+            right: 0,
           }}
         >
           <li>
-            <a
-              className={`block px-4 py-2 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${sortOption === 'latest' ? 'font-bold' : ''}`}
+            <button
+              className={`block px-4 py-2 ${sortOption === 'latest' ? 'font-bold' : ''}`}
               onClick={() => handleSortOption('latest')}
             >
               <div className="flex items-center gap-x-2">
                 <ClockArrowUp className={`${darkMode ? 'text-white' : 'text-black'} w-4 h-4`} />
                 เพิ่มล่าสุด
               </div>
-            </a>
+            </button>
           </li>
           <li>
-            <a
-              className={`block px-4 py-2 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${sortOption === 'price-low-high' ? 'font-bold' : ''}`}
+            <button
+              className={`block px-4 py-2 ${sortOption === 'price-low-high' ? 'font-bold' : ''}`}
               onClick={() => handleSortOption('price-low-high')}
             >
               <div className="flex items-center gap-x-2">
                 <ArrowDownNarrowWide className={`${darkMode ? 'text-white' : 'text-black'} w-4 h-4`} />
                 ราคาน้อยไปมาก
               </div>
-            </a>
+            </button>
           </li>
           <li>
-            <a
-              className={`block px-4 py-2 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${sortOption === 'price-high-low' ? 'font-bold' : ''}`}
+            <button
+              className={`block px-4 py-2 ${sortOption === 'price-high-low' ? 'font-bold' : ''}`}
               onClick={() => handleSortOption('price-high-low')}
             >
               <div className="flex items-center gap-x-2">
                 <ArrowUpNarrowWide className={`${darkMode ? 'text-white' : 'text-black'} w-4 h-4`} />
                 ราคามากไปน้อย
               </div>
-            </a>
+            </button>
           </li>
-          {/* Filter for Out of Stock */}
-      <li>
-        <a
-          className={`block px-4 py-2 hover:${darkMode ? 'bg-gray-700' : 'bg-gray-100'} ${sortOption === 'out-of-stock' ? 'font-bold' : ''}`}
-          onClick={() => handleSortOption('out-of-stock')}
-        >
-          <div className="flex items-center gap-x-2">
-            <LuPackageX className={`${darkMode ? 'text-white' : 'text-black'} w-4 h-4`} />
-            สินค้าหมด
-          </div>
-        </a>
-      </li>
+          <li>
+            <button
+              className={`block px-4 py-2 ${sortOption === 'out-of-stock' ? 'font-bold' : ''}`}
+              onClick={() => handleSortOption('out-of-stock')}
+            >
+              <div className="flex items-center gap-x-2">
+                <LuPackageX className={`${darkMode ? 'text-white' : 'text-black'} w-4 h-4`} />
+                สินค้าหมด
+              </div>
+            </button>
+          </li>
         </ul>
       )}
+
     </div>
   </div>
 </div>
@@ -2430,79 +2447,71 @@ const handleDecreaseQuantity = (productName) => {
     </div>
   ) : (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-2">
-      {filteredProducts.length > 0 ? (
-        filteredProducts.map((product) => (
-          <div
-            key={product.id}
-            className={`relative card ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'} shadow-md hover:shadow-lg transition-shadow flex flex-col cursor-pointer h-full`} // Use relative on the card
-            onClick={() => handleQuantityProductClick(product)}
-          >
-            {/* Stock Badge */}
-            <span 
-  className={`absolute top-[-6px] right-[-6px]  ${
-    product.stock_quantity === 0 
-      ? darkMode 
-        ? 'bg-red-600'  // สีแดงเมื่อโหมดมืดและสินค้าหมด
-        : 'bg-red-500'  // สีแดงเมื่อโหมดสว่างและสินค้าหมด
-      : product.stock_quantity <= 5 
-      ? darkMode 
-        ? 'bg-yellow-600'  // สีเหลืองเมื่อโหมดมืดและสินค้าใกล้หมด
-        : 'bg-yellow-500'  // สีเหลืองเมื่อโหมดสว่างและสินค้าใกล้หมด
-      : darkMode 
-        ? 'bg-green-600'  // สีเขียวเมื่อโหมดมืดและสินค้ามีพอเพียง
-        : 'bg-green-500'  // สีเขียวเมื่อโหมดสว่างและสินค้ามีพอเพียง
-    } 
-    font-semibold text-white text-lg px-2 py-0 rounded-full mt-2 mr-2 z-10 flex items-center gap-1`}
->
-  <Package className="w-4 h-4" />
-  {product.stock_quantity > 0 ? product.stock_quantity : 'สินค้าหมด'}
-
-  {/* แสดง <FaArrowTrendDown /> เฉพาะเมื่อ stock_quantity มากกว่า 0 และน้อยกว่าหรือเท่ากับ 5 */}
-  {product.stock_quantity > 0 && product.stock_quantity <= 5 && (
-    <FaArrowTrendDown />
-  )}
-</span>
-
-
-
-
-<figure className="relative w-full h-32 sm:h-36 md:h-24 lg:h-32 overflow-hidden mt-4">
-  <img
-    src={product.img ? `${product.img}` : '/default-image-url.png'}  // Ensure default image if product.img is null
-    alt={product.product_name || 'Product Image'}
-    className="w-full h-full object-contain"
-  />
-</figure>
-
-
-
-            <div className="card-body flex flex-col p-2 flex-grow">
-              {/* Product Name */}
-              <h2 
-                className={`card-title text-xl font-semibold ${darkMode ? 'text-gray-100' : 'text-black'} mb-6 min-h-[40px]`} 
-                style={{
-                  whiteSpace: 'nowrap',       
-                  overflow: 'hidden',         
-                  textOverflow: 'ellipsis',   
-                }}
+ {filteredProducts.length > 0 ? (
+          filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              className={`relative card ${darkMode ? 'bg-gray-800 text-gray-100' : 'bg-white text-black'} shadow-md hover:shadow-lg transition-shadow flex flex-col cursor-pointer h-full`}
+              onClick={() => handleQuantityProductClick(product)}
+            >
+              {/* Stock Badge */}
+              <span 
+                className={`absolute top-[-6px] right-[-6px] ${
+                  product.stock_quantity === 0 
+                    ? darkMode 
+                      ? 'bg-red-600'  
+                      : 'bg-red-500'  
+                    : product.stock_quantity <= 5 
+                    ? darkMode 
+                      ? 'bg-yellow-600'  
+                      : 'bg-yellow-500'  
+                    : darkMode 
+                      ? 'bg-green-600'  
+                      : 'bg-green-500'  
+                } 
+                font-semibold text-white text-lg px-2 py-0 rounded-full mt-2 mr-2 z-10 flex items-center gap-1`}
               >
-                {product.product_name || 'Product Name'}
-              </h2>
-            </div>
+                <Package className="w-4 h-4" />
+                {product.stock_quantity > 0 ? product.stock_quantity : 'สินค้าหมด'}
 
-            <p className={`absolute bottom-2 left-2 text-2xl ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
-              ฿{product.price || 'N/A'}
+                {product.stock_quantity > 0 && product.stock_quantity <= 5 && (
+                  <FaArrowTrendDown />
+                )}
+              </span>
+
+              <figure className="relative w-full h-32 sm:h-36 md:h-24 lg:h-32 overflow-hidden mt-4">
+                <img
+                  src={product.img ? `${product.img}` : '/default-image-url.png'}
+                  alt={product.product_name || 'Product Image'}
+                  className="w-full h-full object-contain"
+                />
+              </figure>
+
+              <div className="card-body flex flex-col p-2 flex-grow">
+                <h2 
+                  className={`card-title text-xl font-semibold ${darkMode ? 'text-gray-100' : 'text-black'} mb-6 min-h-[40px]`} 
+                  style={{
+                    whiteSpace: 'nowrap',       
+                    overflow: 'hidden',         
+                    textOverflow: 'ellipsis',   
+                  }}
+                >
+                  {product.product_name || 'Product Name'}
+                </h2>
+              </div>
+
+              <p className={`absolute bottom-2 left-2 text-2xl ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+                ฿{product.price || 'N/A'}
+              </p>
+            </div>
+          ))
+        ) : (
+          <div className="col-span-full flex justify-center items-center h-32">
+            <p className={`text-2xl font-semibold ${darkMode ? 'text-gray-100' : 'text-black'} mb-4`}>
+              ไม่มีสินค้าที่ต้องแสดง
             </p>
           </div>
-        ))
-      ) : (
-        <div className="col-span-full flex justify-center items-center h-32">
-          <p className={`text-2xl font-semibold ${darkMode ? 'text-gray-100' : 'text-black'} mb-4`}>
-            ไม่มีสินค้าที่ต้องแสดง
-          </p>
-        </div>
-      )}
-
+        )}
 
 
 

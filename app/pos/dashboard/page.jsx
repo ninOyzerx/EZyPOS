@@ -2136,7 +2136,7 @@ useEffect(() => {
                         >
                             <td className="py-2 px-6 text-left">{category.name}</td>
                             <td className="py-2 px-6 text-left">{category.description}</td>
-                            <td className="py-2 px-6 text-left">{category.product_count}</td>
+                            <td className="py-2 px-6 text-left">{category.product_count} รายการ</td>
                             <td className="py-2 px-6 text-left">
                                 <img
                                     src={category.category_img || '/default-image.png'}
