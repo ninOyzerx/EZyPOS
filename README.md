@@ -1,13 +1,24 @@
 # EZyPOS
 
-EZyPOS is a Point-of-Sale (POS) system designed to simplify sales tracking, inventory management, and business operations.
+EZyPOS เป็นระบบ Point of Sale (POS) ที่พัฒนาด้วย Next.js และใช้งาน MySQL เป็นฐานข้อมูลหลักสำหรับจัดเก็บข้อมูล โดยมีรายละเอียดเทคโนโลยีและการทำงานดังนี้:
 
-## Features
+## เทคโนโลยีที่ใช้
 
-- Sales management
-- Inventory tracking
-- User authentication
-- Reporting and analytics
+- **Frontend:** Next.js (React framework)
+- **Backend:** Next.js API Route
+- **Database:** MySQL
+
+## โครงสร้างหลักของระบบ
+
+- ระบบพัฒนาแบบ Full-Stack ใน Next.js โดยใช้ API Route สำหรับการเชื่อมต่อและจัดการข้อมูลกับ MySQL
+- การจัดการ session จะใช้วิธีเก็บ token ใน localStorage ของ browser เพื่อรักษาสถานะการ login ของผู้ใช้
+- การเชื่อมต่อฐานข้อมูลใช้ MySQL ทั้งในฝั่ง backend เพื่อจัดการข้อมูลสินค้า, การขาย, ผู้ใช้งาน และอื่นๆ
+
+## ความสามารถของระบบ
+
+- ระบบ Authentication โดยใช้ session token
+- จัดการข้อมูล POS (สินค้า, รายการขาย, ผู้ใช้งาน)
+- การเชื่อมต่อฐานข้อมูล MySQL ผ่าน API Route ของ Next.js
 
 <img width="1267" alt="image" src="https://github.com/user-attachments/assets/5f8e7753-5081-4e55-ae1f-e3013b066d2d" />
 
